@@ -176,20 +176,22 @@ namespace NHibernate.Engine.Query
 			private readonly bool shallow;
 			private readonly HashSet<string> filterNames;
 			private readonly int hashCode;
+			private readonly System.Type queryType;
 			private readonly System.Type queryTypeDiscriminator;
 
 			public HQLQueryPlanKey(string query, bool shallow, IDictionary<string, IFilter> enabledFilters)
-				: this(typeof(object), query, shallow, enabledFilters)
+				: this(typeof(object), typeof(object), query, shallow, enabledFilters)
 			{
 			}
 
 			public HQLQueryPlanKey(IQueryExpression queryExpression, bool shallow, IDictionary<string, IFilter> enabledFilters)
-				: this(queryExpression.GetType(), queryExpression.Key, shallow, enabledFilters)
+				: this(queryExpression.Type, queryExpression.GetType(), queryExpression.Key, shallow, enabledFilters)
 			{
 			}
 
-			protected HQLQueryPlanKey(System.Type queryTypeDiscriminator, string query, bool shallow, IDictionary<string, IFilter> enabledFilters)
+			protected HQLQueryPlanKey(System.Type queryType, System.Type queryTypeDiscriminator, string query, bool shallow, IDictionary<string, IFilter> enabledFilters)
 			{
+				this.queryType = queryType;
 				this.queryTypeDiscriminator = queryTypeDiscriminator;
 				this.query = query;
 				this.shallow = shallow;
@@ -208,6 +210,7 @@ namespace NHibernate.Engine.Query
 					var hash = query.GetHashCode();
 					hash = 29*hash + (shallow ? 1 : 0);
 					hash = 29*hash + CollectionHelper.GetHashCode(filterNames);
+					hash = 29*hash + queryType.GetHashCode();
 					hash = 29*hash + queryTypeDiscriminator.GetHashCode();
 					hashCode = hash;
 				}
@@ -236,6 +239,11 @@ namespace NHibernate.Engine.Query
 				}
 
 				if (!query.Equals(that.query))
+				{
+					return false;
+				}
+
+				if (queryType != that.queryType)
 				{
 					return false;
 				}
